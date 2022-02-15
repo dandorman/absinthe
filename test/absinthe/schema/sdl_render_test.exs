@@ -285,4 +285,42 @@ defmodule Absinthe.Schema.SdlRenderTest do
              }
              """
   end
+
+  defmodule TestPrototype do
+    use Absinthe.Schema.Prototype
+
+    directive :foo do
+      arg :baz, :string
+
+      on :field_definition
+    end
+  end
+
+  defmodule TestSchemaWithPrototype do
+    use Absinthe.Schema
+
+    @prototype_schema TestPrototype
+
+    query do
+      field :name, :string do
+        directive :foo, baz: "qux"
+      end
+    end
+  end
+
+  test "Render SDL with directives provided via @prototype_schema" do
+    assert Absinthe.Schema.to_sdl(TestSchemaWithPrototype) ==
+             """
+             "Represents a schema"
+             schema {
+               query: RootQueryType
+             }
+
+             directive @foo(baz: String) on FIELD_DEFINITION
+
+             type RootQueryType {
+               name: String @foo(baz: "qux")
+             }
+             """
+  end
 end
